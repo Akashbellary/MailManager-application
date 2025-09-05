@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Email Triage AI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt me-2"></i>
+            Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_emails }}</h4>
+                        <p class="card-text">Total Emails</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-envelope fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ response_stats.pending or 0 }}</h4>
+                        <p class="card-text">Pending Responses</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ response_stats.sent or 0 }}</h4>
+                        <p class="card-text">Responses Sent</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-paper-plane fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ filtered_count }}</h4>
+                        <p class="card-text">Filtered Emails</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-filter fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Priority Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="priorityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Sentiment Analysis</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="sentimentChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Response Status</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="responseChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Emails -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Emails</h5>
+                <a href="{{ url_for('emails.email_list') }}" class="btn btn-primary btn-sm">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_emails %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Sender</th>
+                                    <th>Subject</th>
+                                    <th>Priority</th>
+                                    <th>Sentiment</th>
+                                    <th>Classification</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for email in recent_emails %}
+                                <tr>
+                                    <td>{{ email.sender[:30] }}...</td>
+                                    <td>{{ email.email_subject[:50] }}...</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if email.priority == 'High Priority' else 'warning' if email.priority == 'Medium Priority' else 'success' }}">
+                                            {{ email.priority.replace(' Priority', '') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if email.sentiment == 'Positive' else 'warning' if email.sentiment == 'Neutral' else 'danger' }}">
+                                            {{ email.sentiment }}
+                                        </span>
+                                    </td>
+                                    <td>{{ email.classification }}</td>
+                                    <td>{{ email.metadata.date[:10] if email.metadata and email.metadata.date else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('emails.email_detail', email_id=email._id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No emails found. <a href="{{ url_for('emails.upload_form') }}">Upload a CSV file</a> to get started.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Chart data from backend
+const chartData = {{ chart_data|safe }};
+
+// Priority Chart
+const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+new Chart(priorityCtx, {
+    type: 'doughnut',
+    data: {
+        labels: chartData.priority?.labels || ['High', 'Medium', 'Low'],
+        datasets: [{
+            data: chartData.priority?.data || [0, 0, 0],
+            backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Sentiment Chart
+const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+new Chart(sentimentCtx, {
+    type: 'doughnut',
+    data: {
+        labels: chartData.sentiment?.labels || ['Positive', 'Neutral', 'Negative'],
+        datasets: [{
+            data: chartData.sentiment?.data || [0, 0, 0],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Response Chart
+const responseCtx = document.getElementById('responseChart').getContext('2d');
+new Chart(responseCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.responses?.labels || ['Pending', 'Approved', 'Sent', 'Rejected'],
+        datasets: [{
+            data: chartData.responses?.data || [0, 0, 0, 0],
+            backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
