@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Approval Queue - Email Triage AI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-check-circle me-2"></i>
+                Approval Queue
+            </h1>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Status Tabs -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <ul class="nav nav-pills justify-content-center">
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'all' %}active{% endif %}" 
+                           href="{{ url_for('approval.approval_queue', status='all') }}">
+                            All
+                            <span class="badge bg-{{ 'light text-dark' if status_filter == 'all' else 'secondary' }} ms-1">
+                                {{ status_counts.get('all', 0) }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" 
+                           href="{{ url_for('approval.approval_queue', status='pending') }}">
+                            Pending
+                            <span class="badge bg-{{ 'light text-dark' if status_filter == 'pending' else 'warning' }} ms-1">
+                                {{ status_counts.get('pending', 0) }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'approved' %}active{% endif %}" 
+                           href="{{ url_for('approval.approval_queue', status='approved') }}">
+                            Approved
+                            <span class="badge bg-{{ 'light text-dark' if status_filter == 'approved' else 'success' }} ms-1">
+                                {{ status_counts.get('approved', 0) }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'sent' %}active{% endif %}" 
+                           href="{{ url_for('approval.approval_queue', status='sent') }}">
+                            Sent
+                            <span class="badge bg-{{ 'light text-dark' if status_filter == 'sent' else 'info' }} ms-1">
+                                {{ status_counts.get('sent', 0) }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if status_filter == 'rejected' %}active{% endif %}" 
+                           href="{{ url_for('approval.approval_queue', status='rejected') }}">
+                            Rejected
+                            <span class="badge bg-{{ 'light text-dark' if status_filter == 'rejected' else 'danger' }} ms-1">
+                                {{ status_counts.get('rejected', 0) }}
+                            </span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Responses List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    {% if pagination.total %}
+                        {{ pagination.total }} Response{{ 's' if pagination.total != 1 else '' }}
+                        {% if status_filter != 'all' %}
+                            ({{ status_filter.title() }})
+                        {% endif %}
+                    {% else %}
+                        No Responses Found
+                    {% endif %}
+                </h5>
+                
+                <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                {% if responses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Email Subject</th>
+                                    <th>Sender</th>
+                                    <th>Response Preview</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for response in responses %}
+                                <tr class="response-row" data-status="{{ response.status }}">
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" 
+                                             title="{{ response.email.email_subject if response.email else 'N/A' }}">
+                                            {{ response.email.email_subject if response.email else 'Email not found' }}
+                                        </div>
+                                        {% if response.email %}
+                                            <small class="text-muted">
+                                                <span class="badge bg-{{ 'danger' if response.email.priority == 'High Priority' else 'warning' if response.email.priority == 'Medium Priority' else 'success' }}">
+                                                    {{ response.email.priority.replace(' Priority', '') if response.email.priority else 'N/A' }}
+                                                </span>
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 150px;">
+                                            {{ response.recipient }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 250px;" 
+                                             title="{{ response.response_text }}">
+                                            {{ response.response_text[:100] }}...
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if response.status == 'pending' else 'success' if response.status == 'approved' else 'info' if response.status == 'sent' else 'danger' }}">
+                                            {{ response.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ response.created_at[:10] if response.created_at else 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('approval.approval_detail', response_id=response._id) }}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            {% if response.status == 'pending' %}
+                                                <form method="POST" action="{{ url_for('approval.approve_response', response_id=response._id) }}" 
+                                                      class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-success" 
+                                                            title="Approve" onclick="return confirm('Approve this response?')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ url_for('approval.reject_response', response_id=response._id) }}" 
+                                                      class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                                            title="Reject" onclick="return confirm('Reject this response?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            {% elif response.status == 'approved' %}
+                                                <form method="POST" action="{{ url_for('approval.send_response', response_id=response._id) }}" 
+                                                      class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-info" 
+                                                            title="Mark as Sent" onclick="return confirm('Mark this response as sent?')">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if pagination.total_pages > 1 %}
+                        <nav aria-label="Response pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if pagination.page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('approval.approval_queue', page=pagination.page-1, status=status_filter) }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in range(1, pagination.total_pages + 1) %}
+                                    {% if page_num == pagination.page %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% elif page_num <= 3 or page_num > pagination.total_pages - 3 or (page_num >= pagination.page - 1 and page_num <= pagination.page + 1) %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('approval.approval_queue', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% elif page_num == 4 and pagination.page > 5 %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% elif page_num == pagination.total_pages - 3 and pagination.page < pagination.total_pages - 4 %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if pagination.page < pagination.total_pages %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('approval.approval_queue', page=pagination.page+1, status=status_filter) }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                    
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No responses found</h5>
+                        {% if status_filter == 'all' %}
+                            <p class="text-muted">No draft responses have been generated yet.</p>
+                            <a href="{{ url_for('emails.email_list') }}" class="btn btn-primary">
+                                <i class="fas fa-inbox me-1"></i>View Emails
+                            </a>
+                        {% else %}
+                            <p class="text-muted">No {{ status_filter }} responses found.</p>
+                            <a href="{{ url_for('approval.approval_queue') }}" class="btn btn-outline-primary">View All Responses</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ status_counts.get('pending', 0) }}</h4>
+                <p class="card-text">Pending Review</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ status_counts.get('approved', 0) }}</h4>
+                <p class="card-text">Approved</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ status_counts.get('sent', 0) }}</h4>
+                <p class="card-text">Sent</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h4 class="card-title">{{ status_counts.get('rejected', 0) }}</h4>
+                <p class="card-text">Rejected</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh every 30 seconds for pending responses
+    {% if status_filter in ['pending', 'all'] %}
+    setInterval(function() {
+        // Only refresh if no modals are open and no forms are being submitted
+        const activeModals = document.querySelectorAll('.modal.show');
+        const activeElement = document.activeElement;
+        
+        if (activeModals.length === 0 && 
+            (!activeElement || (activeElement.tagName !== 'BUTTON' && activeElement.type !== 'submit'))) {
+            location.reload();
+        }
+    }, 30000);
+    {% endif %}
+    
+    // Add confirmation for bulk actions
+    const actionForms = document.querySelectorAll('form[action*="approve"], form[action*="reject"], form[action*="send"]');
+    actionForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const button = this.querySelector('button[type="submit"]');
+            if (button) {
+                // Show loading state
+                button.disabled = true;
+                const icon = button.querySelector('i');
+                if (icon) {
+                    icon.className = 'fas fa-spinner fa-spin';
+                }
+            }
+        });
+    });
+    
+    // Highlight rows based on status
+    const rows = document.querySelectorAll('.response-row');
+    rows.forEach(row => {
+        const status = row.dataset.status;
+        if (status === 'pending') {
+            row.classList.add('table-warning');
+        } else if (status === 'approved') {
+            row.classList.add('table-success');
+        } else if (status === 'sent') {
+            row.classList.add('table-info');
+        } else if (status === 'rejected') {
+            row.classList.add('table-danger');
+        }
+    });
+});
+</script>
+{% endblock %}

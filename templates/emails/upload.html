@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CSV - Email Triage AI{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-upload me-2"></i>
+                Upload CSV File
+            </h1>
+            <a href="{{ url_for('emails.email_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Emails
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Upload Form -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-csv me-2"></i>
+                    Select CSV File
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" action="{{ url_for('emails.upload_csv') }}" id="uploadForm">
+                    <div class="mb-4">
+                        <label for="csvFile" class="form-label">Choose CSV file to upload</label>
+                        <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                        <div class="form-text" id="fileInfo">
+                            File must be in CSV format with required columns: sender, subject, body, sent_date
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload and Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- CSV Format Requirements -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    CSV Format Requirements
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Your CSV file must contain the following columns (header names can vary):</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Required Column</th>
+                                <th>Accepted Header Names</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Sender</strong></td>
+                                <td>sender, from, email, sender_mail</td>
+                                <td>Email address of the sender</td>
+                                <td>customer@example.com</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Subject</strong></td>
+                                <td>subject, email_subject</td>
+                                <td>Email subject line</td>
+                                <td>Account login issue</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Body</strong></td>
+                                <td>body, email_body, content, message</td>
+                                <td>Email content/message</td>
+                                <td>I can't log into my account...</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date</strong></td>
+                                <td>sent_date, date, timestamp, sent_time</td>
+                                <td>When the email was sent</td>
+                                <td>2024-01-15 14:30:00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Processing Information
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Each email will be automatically classified using AI for priority, sentiment, and category</li>
+                        <li>Vector embeddings will be generated for semantic search capabilities</li>
+                        <li>Personal information (phone numbers, addresses, emails) will be extracted automatically</li>
+                        <li>Suggested responses will be generated for each email</li>
+                        <li>Processing may take a few minutes depending on file size</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sample CSV Format -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>
+                    Sample CSV Format
+                </h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3 rounded"><code>sender,subject,body,sent_date
+customer@example.com,"Login Issue","I can't access my account. Please help!","2024-01-15 14:30:00"
+support@company.com,"Order Inquiry","When will my order #12345 be shipped?","2024-01-15 15:45:00"
+user@domain.com,"Technical Problem","The application keeps crashing on startup","2024-01-15 16:20:00"</code></pre>
+                
+                <div class="mt-3">
+                    <a href="data:text/csv;charset=utf-8,sender%2Csubject%2Cbody%2Csent_date%0Acustomer%40example.com%2C%22Login%20Issue%22%2C%22I%20can't%20access%20my%20account.%20Please%20help!%22%2C%222024-01-15%2014%3A30%3A00%22%0Asupport%40company.com%2C%22Order%20Inquiry%22%2C%22When%20will%20my%20order%20%2312345%20be%20shipped%3F%22%2C%222024-01-15%2015%3A45%3A00%22%0Auser%40domain.com%2C%22Technical%20Problem%22%2C%22The%20application%20keeps%20crashing%20on%20startup%22%2C%222024-01-15%2016%3A20%3A00%22"
+                       download="sample_emails.csv" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-download me-1"></i>
+                        Download Sample CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('csvFile');
+    const submitBtn = document.getElementById('submitBtn');
+    const fileInfo = document.getElementById('fileInfo');
+    
+    // File input validation and info display
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const fileName = file.name.toLowerCase();
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            
+            if (!fileName.endsWith('.csv')) {
+                this.value = '';
+                fileInfo.innerHTML = '<span class="text-danger">Please select a CSV file.</span>';
+                submitBtn.disabled = true;
+            } else if (file.size > 100 * 1024 * 1024) { // 100MB limit
+                this.value = '';
+                fileInfo.innerHTML = '<span class="text-danger">File size must be less than 100MB.</span>';
+                submitBtn.disabled = true;
+            } else {
+                fileInfo.innerHTML = `
+                    <span class="text-success">File selected: <strong>${file.name}</strong> (${fileSize} MB)</span><br>
+                    File must be in CSV format with required columns: sender, subject, body, sent_date
+                `;
+                submitBtn.disabled = false;
+            }
+        } else {
+            fileInfo.innerHTML = 'File must be in CSV format with required columns: sender, subject, body, sent_date';
+            submitBtn.disabled = false;
+        }
+    });
+    
+    // Form submission handling
+    form.addEventListener('submit', function(e) {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please select a CSV file to upload.');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            e.preventDefault();
+            alert('Please select a valid CSV file.');
+            return;
+        }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    });
+    
+    // Drag and drop functionality
+    const dropZone = form;
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight() {
+        dropZone.classList.add('drag-over');
+    }
+    
+    function unhighlight() {
+        dropZone.classList.remove('drag-over');
+    }
+    
+    dropZone.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    }
+});
+</script>
+
+<style>
+.drag-over {
+    background-color: rgba(13, 110, 253, 0.1);
+    border: 2px dashed #0d6efd;
+    border-radius: 0.5rem;
+}
+</style>
+{% endblock %}

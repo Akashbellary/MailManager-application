@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Progress - Email Triage AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-upload me-2"></i>
+                    Processing Upload: {{ progress.filename }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold">Progress</span>
+                        <span id="progressText">{{ progress.processed_rows }} of {{ progress.total_rows }} emails processed</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             id="progressBar"
+                             style="width: {{ ((progress.processed_rows / progress.total_rows) * 100) if progress.total_rows > 0 else 0 }}%"
+                             aria-valuenow="{{ progress.processed_rows }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="{{ progress.total_rows }}">
+                            <span id="progressPercentage">
+                                {{ "%.1f"|format((progress.processed_rows / progress.total_rows) * 100) if progress.total_rows > 0 else 0 }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Information -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-info-circle me-2"></i>Status
+                                </h6>
+                                <p class="card-text">
+                                    <span class="badge bg-{{ 'warning' if progress.status == 'processing' else 'success' if progress.status == 'completed' else 'danger' }}" id="statusBadge">
+                                        {{ progress.status.title() }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-clock me-2"></i>Started
+                                </h6>
+                                <p class="card-text">{{ progress.created_at[:19] if progress.created_at else 'N/A' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Processing Steps -->
+                <div class="mt-4">
+                    <h6>Processing Steps:</h6>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-check-circle text-success me-2"></i>File uploaded and validated</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-{{ 'check-circle text-success' if progress.status in ['processing', 'completed'] else 'circle text-muted' }} me-2"></i>
+                                Processing emails with AI classification
+                            </span>
+                            <span class="badge bg-primary rounded-pill" id="processedCount">{{ progress.processed_rows }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-{{ 'check-circle text-success' if progress.status == 'completed' else 'circle text-muted' }} me-2"></i>
+                                Generating embeddings and responses
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="fas fa-{{ 'check-circle text-success' if progress.status == 'completed' else 'circle text-muted' }} me-2"></i>
+                                Finalizing and saving to database
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error Message -->
+                {% if progress.error_message %}
+                <div class="alert alert-danger mt-4" id="errorAlert">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error
+                    </h6>
+                    <p class="mb-0" id="errorMessage">{{ progress.error_message }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Action Buttons -->
+                <div class="mt-4 d-flex gap-2">
+                    <a href="{{ url_for('emails.email_list') }}" class="btn btn-primary" id="viewEmailsBtn" 
+                       {% if progress.status != 'completed' %}style="display: none;"{% endif %}>
+                        <i class="fas fa-inbox me-1"></i>View Processed Emails
+                    </a>
+                    <a href="{{ url_for('emails.upload_form') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-upload me-1"></i>Upload Another File
+                    </a>
+                    <button class="btn btn-outline-info" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressId = '{{ progress._id }}';
+    let eventSource;
+    
+    // Only start SSE if processing is not completed
+    {% if progress.status not in ['completed', 'failed'] %}
+    startProgressUpdates();
+    {% endif %}
+    
+    function startProgressUpdates() {
+        eventSource = new EventSource(`{{ url_for('emails.upload_progress_stream', progress_id=progress._id) }}`);
+        
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                updateProgress(data);
+            } catch (error) {
+                console.error('Error parsing SSE data:', error);
+            }
+        };
+        
+        eventSource.onerror = function(event) {
+            console.error('SSE connection error:', event);
+            // Retry connection after 5 seconds
+            setTimeout(() => {
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    startProgressUpdates();
+                }
+            }, 5000);
+        };
+    }
+    
+    function updateProgress(data) {
+        // Update progress bar
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const statusBadge = document.getElementById('statusBadge');
+        const processedCount = document.getElementById('processedCount');
+        const viewEmailsBtn = document.getElementById('viewEmailsBtn');
+        
+        if (data.error) {
+            // Handle error
+            statusBadge.className = 'badge bg-danger';
+            statusBadge.textContent = 'Error';
+            
+            const errorAlert = document.getElementById('errorAlert') || createErrorAlert();
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = data.error;
+            errorAlert.style.display = 'block';
+            
+            eventSource.close();
+            return;
+        }
+        
+        // Update progress
+        const percentage = data.percentage || 0;
+        progressBar.style.width = percentage + '%';
+        progressBar.setAttribute('aria-valuenow', data.processed_rows || 0);
+        progressPercentage.textContent = percentage.toFixed(1) + '%';
+        progressText.textContent = `${data.processed_rows || 0} of ${data.total_rows || 0} emails processed`;
+        processedCount.textContent = data.processed_rows || 0;
+        
+        // Update status
+        const statusMap = {
+            'processing': { class: 'bg-warning', text: 'Processing' },
+            'completed': { class: 'bg-success', text: 'Completed' },
+            'failed': { class: 'bg-danger', text: 'Failed' }
+        };
+        
+        const statusInfo = statusMap[data.status] || { class: 'bg-secondary', text: data.status };
+        statusBadge.className = `badge ${statusInfo.class}`;
+        statusBadge.textContent = statusInfo.text;
+        
+        // Show view emails button when completed
+        if (data.status === 'completed') {
+            viewEmailsBtn.style.display = 'inline-block';
+            progressBar.classList.remove('progress-bar-animated');
+            eventSource.close();
+            
+            // Show success message
+            showSuccessMessage('Upload completed successfully!');
+        } else if (data.status === 'failed') {
+            progressBar.classList.remove('progress-bar-animated');
+            progressBar.classList.add('bg-danger');
+            eventSource.close();
+        }
+        
+        // Handle error message
+        if (data.error_message) {
+            const errorAlert = document.getElementById('errorAlert') || createErrorAlert();
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = data.error_message;
+            errorAlert.style.display = 'block';
+        }
+    }
+    
+    function createErrorAlert() {
+        const alertDiv = document.createElement('div');
+        alertDiv.id = 'errorAlert';
+        alertDiv.className = 'alert alert-danger mt-4';
+        alertDiv.innerHTML = `
+            <h6 class="alert-heading">
+                <i class="fas fa-exclamation-triangle me-2"></i>Error
+            </h6>
+            <p class="mb-0" id="errorMessage"></p>
+        `;
+        document.querySelector('.card-body').appendChild(alertDiv);
+        return alertDiv;
+    }
+    
+    function showSuccessMessage(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success mt-4';
+        alertDiv.innerHTML = `
+            <h6 class="alert-heading">
+                <i class="fas fa-check-circle me-2"></i>Success
+            </h6>
+            <p class="mb-0">${message}</p>
+        `;
+        document.querySelector('.card-body').appendChild(alertDiv);
+    }
+    
+    // Cleanup when page is unloaded
+    window.addEventListener('beforeunload', function() {
+        if (eventSource) {
+            eventSource.close();
+        }
+    });
+});
+</script>
+{% endblock %}
