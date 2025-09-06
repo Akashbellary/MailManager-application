@@ -1,10 +1,27 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+from dotenv import load_dotenv
+
+# Suppress TensorFlow deprecation warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import warnings
+warnings.filterwarnings('ignore', category=DeprecationWarning, module='tensorflow')
+warnings.filterwarnings('ignore', category=DeprecationWarning, module='pymongo')
+
+# load .env
+load_dotenv()
+
+# Configure logging - reduce verbosity for production
+logging.basicConfig(level=logging.INFO)
+# Suppress verbose MongoDB and TensorFlow logs
+logging.getLogger('pymongo').setLevel(logging.WARNING)
+logging.getLogger('tensorflow').setLevel(logging.WARNING)
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger('h5py').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 # Create Flask app
 app = Flask(__name__)
@@ -23,11 +40,13 @@ from routes.dashboard import dashboard_bp
 from routes.emails import emails_bp
 from routes.approval import approval_bp
 from routes.search import search_bp
+from routes.auth import auth_bp
 
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(emails_bp, url_prefix='/emails')
 app.register_blueprint(approval_bp, url_prefix='/approval')
 app.register_blueprint(search_bp, url_prefix='/search')
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 # Root route redirect
 @app.route('/')
@@ -52,3 +71,6 @@ def too_large(error):
     from flask import render_template, flash, redirect, url_for
     flash('File too large. Maximum size is 100MB.', 'danger')
     return redirect(url_for('emails.upload_form'))
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)

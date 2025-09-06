@@ -3,6 +3,7 @@ import logging
 import json
 from typing import Dict, List, Optional, Any
 from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -10,13 +11,16 @@ class AIService:
     def __init__(self):
         self.client = None
         self.initialize_client()
+        # Initialize local embedding model (100% working, no API key needed)
+        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')  # Fast and effective model
     
     def initialize_client(self):
-        """Initialize OpenAI client with NVIDIA API"""
+        """Initialize OpenAI client with NVIDIA API for chat completions"""
         try:
             api_key = os.getenv('NVIDIA_API_KEY', 'nvapi-default-key')
             base_url = os.getenv('NVIDIA_BASE_URL', 'https://integrate.api.nvidia.com/v1')
             
+            # Only pass valid arguments to OpenAI constructor
             self.client = OpenAI(
                 api_key=api_key,
                 base_url=base_url
@@ -26,27 +30,17 @@ class AIService:
             logger.error(f"Failed to initialize AI Service: {e}")
             self.client = None
     
-    def generate_embeddings(self, text: str) -> Optional[List[float]]:
-        """Generate embeddings for text"""
-        if not self.client:
-            logger.warning("AI client not initialized")
-            return None
-        
+    def generate_embeddings(self, texts):
+        """Generate embeddings for texts using local sentence-transformers"""
         try:
-            response = self.client.embeddings.create(
-                input=[text],
-                model="nvidia/nv-embedqa-e5-v5",
-                encoding_format="float"
-            )
-            
-            if response.data:
-                return response.data[0].embedding
-            return None
-            
+            # Use local embedder instead of API
+            embeddings = self.embedder.encode(texts)
+            return embeddings.tolist()  # Return as list of lists for consistency
+        
         except Exception as e:
             logger.error(f"Error generating embeddings: {e}")
-            return None
-    
+            raise
+        
     def classify_email(self, subject: str, body: str) -> Dict[str, str]:
         """Classify email priority, sentiment, and category"""
         if not self.client:
@@ -63,7 +57,7 @@ class AIService:
             Please respond with a JSON object containing:
             1. priority: "High Priority", "Medium Priority", or "Low Priority"
             2. sentiment: "Positive", "Neutral", or "Negative"
-            3. classification: one of "Support", "Query", "Request", "Help", "Complaint", "General"
+            3. classification: one of "Support", "Query", "Request", "Help"
             4. summary: a brief 1-2 sentence summary of the email
             
             Consider:
@@ -75,10 +69,14 @@ class AIService:
             """
             
             response = self.client.chat.completions.create(
-                model="meta/llama-3.1-405b-instruct",
+                model="nvidia/nvidia-nemotron-nano-9b-v2",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=500
+                max_tokens=500,
+                extra_body={
+                    "min_thinking_tokens": 128,
+                    "max_thinking_tokens": 256
+                }
             )
             
             if response.choices and response.choices[0].message.content:
@@ -113,6 +111,7 @@ class AIService:
         priority = "Low Priority"
         sentiment = "Neutral"
         classification = "General"
+        summary = "Fallback summary: General email content."
         
         # Priority keywords
         high_priority_keywords = ['urgent', 'emergency', 'asap', 'critical', 'problem', 'error', 'issue', 'broken', 'failed', 'help']
@@ -141,58 +140,58 @@ class AIService:
             classification = "Request"
         elif any(keyword in text for keyword in ['problem', 'issue', 'error']):
             classification = "Help"
+        elif any(keyword in text for keyword in ['complaint', 'complain']):
+            classification = "Complaint"
         
         return {
             'priority': priority,
             'sentiment': sentiment,
             'classification': classification,
-            'summary': f"Email from sender regarding {classification.lower()}"
+            'summary': summary
         }
     
-    def generate_response(self, email_subject: str, email_body: str, email_classification: str) -> Optional[str]:
-        """Generate AI response for email"""
+    def generate_response(self, subject: str, body: str, classification: str) -> Optional[str]:
+        """Generate suggested response based on classification"""
         if not self.client:
             logger.warning("AI client not initialized - using fallback response")
-            return self._fallback_response(email_classification)
+            return self._fallback_response(classification)
         
         try:
             prompt = f"""
-            Generate a professional email response for the following customer email:
+            Generate a professional email response for the following:
             
-            Subject: {email_subject}
-            Body: {email_body}
-            Classification: {email_classification}
+            Classification: {classification}
+            Subject: {subject}
+            Body: {body}
             
-            Please generate a helpful, professional, and empathetic response that:
-            1. Acknowledges the customer's concern/question
-            2. Provides helpful information or next steps
-            3. Maintains a professional tone
-            4. Is concise but complete
-            
-            Response:
+            Response should be polite, concise, and address the main points.
             """
             
             response = self.client.chat.completions.create(
-                model="meta/llama-3.1-405b-instruct",
+                model="nvidia/nvidia-nemotron-nano-9b-v2",
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=500
+                temperature=0.5,
+                max_tokens=500,
+                extra_body={
+                    "min_thinking_tokens": 128,
+                    "max_thinking_tokens": 256
+                }
             )
             
-            if response.choices:
+            if response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content.strip()
             
-            return self._fallback_response(email_classification)
+            return self._fallback_response(classification)
             
         except Exception as e:
             logger.error(f"Error generating response: {e}")
-            return self._fallback_response(email_classification)
+            return self._fallback_response(classification)
     
     def _fallback_response(self, classification: str) -> str:
         """Fallback response templates"""
         templates = {
-            'Support': "Thank you for contacting our support team. We have received your request and will respond within 24 hours. If this is urgent, please call our support line.",
-            'Query': "Thank you for your inquiry. We will review your question and provide a detailed response shortly. Please allow 1-2 business days for our response.",
+            'Support': "Thank you for reaching out. Our support team will assist you shortly.",
+            'Query': "Thank you for your query. We will review your question and provide a detailed response shortly. Please allow 1-2 business days for our response.",
             'Request': "We have received your request and will process it as soon as possible. You will receive an update within 2-3 business days.",
             'Help': "We understand you're experiencing an issue and we're here to help. Our technical team will investigate and respond with a solution within 24 hours.",
             'Complaint': "We apologize for any inconvenience you've experienced. Your feedback is important to us and we will address your concerns promptly.",
@@ -232,10 +231,14 @@ class AIService:
             """
             
             response = self.client.chat.completions.create(
-                model="meta/llama-3.1-405b-instruct",
+                model="nvidia/nvidia-nemotron-nano-9b-v2",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=300
+                max_tokens=300,
+                extra_body={
+                    "min_thinking_tokens": 128,
+                    "max_thinking_tokens": 256
+                }
             )
             
             if response.choices and response.choices[0].message.content:

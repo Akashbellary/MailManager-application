@@ -52,11 +52,13 @@ class SearchService:
         """
         try:
             # Generate query embedding
-            query_embedding = ai_service.generate_embeddings(query)
+            query_embeddings = ai_service.generate_embeddings([query])
             
-            if not query_embedding:
+            if not query_embeddings:
                 # Fallback to text search
                 return self._text_search(query, filters, sender_filters, page, per_page)
+                
+            query_embedding = query_embeddings[0]
             
             # Get all emails with embeddings for similarity comparison
             # Note: In production, you'd use a vector database like Pinecone or Weaviate
