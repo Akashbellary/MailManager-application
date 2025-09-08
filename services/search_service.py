@@ -43,8 +43,7 @@ class SearchService:
                 
         except Exception as e:
             logger.error(f"Error in search_emails: {e}")
-            # Fallback to basic search
-            return self._basic_search(query, filters, page, per_page)
+            raise Exception(f"Failed to perform search: {str(e)}")
     
     def _semantic_search(self, query: str, filters: Dict[str, List[str]], sender_filters: List[str], page: int, per_page: int) -> Dict[str, Any]:
         """
@@ -93,7 +92,7 @@ class SearchService:
             
         except Exception as e:
             logger.error(f"Error in semantic search: {e}")
-            return self._text_search(query, filters, sender_filters, page, per_page)
+            raise Exception(f"Semantic search failed: {str(e)}")
     
     def _text_search(self, query: str, filters: Dict[str, List[str]], sender_filters: List[str], page: int, per_page: int) -> Dict[str, Any]:
         """
@@ -139,7 +138,7 @@ class SearchService:
             
         except Exception as e:
             logger.error(f"Error in text search: {e}")
-            return self._basic_search(query, filters, page, per_page)
+            raise Exception(f"Text search failed: {str(e)}")
     
     def _filter_search(self, filters: Dict[str, List[str]], page: int, per_page: int) -> Dict[str, Any]:
         """
@@ -165,33 +164,7 @@ class SearchService:
             
         except Exception as e:
             logger.error(f"Error in filter search: {e}")
-            return {'emails': [], 'total': 0, 'page': page, 'per_page': per_page}
-    
-    def _basic_search(self, query: str, filters: Dict[str, List[str]], page: int, per_page: int) -> Dict[str, Any]:
-        """
-        Fallback basic search
-        """
-        try:
-            mongo_filter = build_mongo_filter(filters or {}, query)
-            
-            # Get total count
-            total = count_emails(mongo_filter)
-            
-            # Get paginated results
-            skip = (page - 1) * per_page
-            emails = find_emails(mongo_filter, skip=skip, limit=per_page)
-            
-            return {
-                'emails': emails,
-                'total': total,
-                'page': page,
-                'per_page': per_page,
-                'query_interpretation': {'intent': f'Basic search for: {query}'}
-            }
-            
-        except Exception as e:
-            logger.error(f"Error in basic search: {e}")
-            return {'emails': [], 'total': 0, 'page': page, 'per_page': per_page}
+            raise Exception(f"Filter search failed: {str(e)}")
     
     def _calculate_similarity(self, embedding1: List[float], embedding2: List[float]) -> float:
         """

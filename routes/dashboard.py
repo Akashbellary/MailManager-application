@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 import logging
-from utils.database import find_emails, count_emails, find_responses
+from utils.database import find_emails, count_emails, find_responses, get_emails_collection
 from utils.helpers import calculate_stats, safe_json_encode
 
 logger = logging.getLogger(__name__)
@@ -100,3 +100,21 @@ def api_stats():
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@dashboard_bp.route('/clear-mails', methods=['POST'])
+def clear_mails():
+    """Clear all emails from the database"""
+    try:
+        # Get the emails collection
+        emails_collection = get_emails_collection()
+        
+        # Delete all emails
+        result = emails_collection.delete_many({})
+        
+        flash(f'Successfully cleared {result.deleted_count} emails from the database.', 'success')
+        return redirect(url_for('dashboard.dashboard'))
+        
+    except Exception as e:
+        logger.error(f"Error clearing emails: {e}")
+        flash('Error clearing emails. Please try again.', 'danger')
+        return redirect(url_for('dashboard.dashboard'))

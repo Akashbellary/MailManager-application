@@ -191,7 +191,7 @@ def generate_response(email_id):
         if use_suggested and email.get('suggested_responses'):
             response_text = email['suggested_responses'][0]
         else:
-            # Generate new response
+            # Generate new response - will raise exception if AI service fails
             response_text = ai_service.generate_response(
                 email['email_subject'],
                 email['email_body'],
@@ -219,5 +219,5 @@ def generate_response(email_id):
     
     except Exception as e:
         logger.error(f"Error generating response: {e}")
-        flash('Error generating response. Please try again.', 'danger')
+        flash(f'Error generating response: {str(e)}', 'danger')
         return redirect(url_for('emails.email_detail', email_id=email_id))

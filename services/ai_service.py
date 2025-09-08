@@ -44,8 +44,8 @@ class AIService:
     def classify_email(self, subject: str, body: str) -> Dict[str, str]:
         """Classify email priority, sentiment, and category"""
         if not self.client:
-            logger.warning("AI client not initialized - using fallback classification")
-            return self._fallback_classification(subject, body)
+            logger.error("AI client not initialized - cannot classify email")
+            raise Exception("AI service not properly initialized. Cannot classify email.")
         
         try:
             prompt = f"""
@@ -55,9 +55,9 @@ class AIService:
             Body: {body}
             
             Please respond with a JSON object containing:
-            1. priority: "High Priority", "Medium Priority", or "Low Priority"
-            2. sentiment: "Positive", "Neutral", or "Negative"
-            3. classification: one of "Support", "Query", "Request", "Help"
+            1. priority: \"High Priority\", \"Medium Priority\", or \"Low Priority\"
+            2. sentiment: \"Positive\", \"Neutral\", or \"Negative\"
+            3. classification: one of \"Support\", \"Query\", \"Request\", \"Help\"
             4. summary: a brief 1-2 sentence summary of the email
             
             Consider:
@@ -97,64 +97,17 @@ class AIService:
                         'summary': result.get('summary', '')
                     }
             
-            return self._fallback_classification(subject, body)
+            raise Exception("Invalid response from AI service")
             
         except Exception as e:
             logger.error(f"Error classifying email: {e}")
-            return self._fallback_classification(subject, body)
-    
-    def _fallback_classification(self, subject: str, body: str) -> Dict[str, str]:
-        """Fallback classification when AI is not available"""
-        text = (subject + " " + body).lower()
-        
-        # Simple keyword-based classification
-        priority = "Low Priority"
-        sentiment = "Neutral"
-        classification = "General"
-        summary = "Fallback summary: General email content."
-        
-        # Priority keywords
-        high_priority_keywords = ['urgent', 'emergency', 'asap', 'critical', 'problem', 'error', 'issue', 'broken', 'failed', 'help']
-        medium_priority_keywords = ['question', 'inquiry', 'request', 'need', 'want', 'how', 'when', 'where']
-        
-        if any(keyword in text for keyword in high_priority_keywords):
-            priority = "High Priority"
-        elif any(keyword in text for keyword in medium_priority_keywords):
-            priority = "Medium Priority"
-        
-        # Sentiment keywords
-        positive_keywords = ['thank', 'great', 'excellent', 'good', 'happy', 'satisfied', 'love']
-        negative_keywords = ['problem', 'issue', 'error', 'failed', 'broken', 'angry', 'frustrated', 'terrible']
-        
-        if any(keyword in text for keyword in positive_keywords):
-            sentiment = "Positive"
-        elif any(keyword in text for keyword in negative_keywords):
-            sentiment = "Negative"
-        
-        # Classification keywords
-        if any(keyword in text for keyword in ['support', 'help', 'assist']):
-            classification = "Support"
-        elif any(keyword in text for keyword in ['question', 'how', 'what', 'why']):
-            classification = "Query"
-        elif any(keyword in text for keyword in ['request', 'need', 'want']):
-            classification = "Request"
-        elif any(keyword in text for keyword in ['problem', 'issue', 'error']):
-            classification = "Help"
-        elif any(keyword in text for keyword in ['complaint', 'complain']):
-            classification = "Complaint"
-        
-        return {
-            'priority': priority,
-            'sentiment': sentiment,
-            'classification': classification,
-            'summary': summary
-        }
+            raise Exception(f"Failed to classify email: {str(e)}")
     
     def generate_response(self, subject: str, body: str, classification: str) -> Optional[str]:
         """Generate suggested response based on classification"""
         if not self.client:
-            logger.warning("AI client not initialized - using fallback response")
-            return self._fallback_response(classification)
+            logger.error("AI client not initialized - cannot generate response")
+            raise Exception("AI service not properly initialized. Cannot generate response.")
         
         try:
             prompt = f"""
@@ -181,35 +134,23 @@ class AIService:
             if response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content.strip()
             
-            return self._fallback_response(classification)
+            raise Exception("Invalid response from AI service")
             
         except Exception as e:
             logger.error(f"Error generating response: {e}")
-            return self._fallback_response(classification)
-    
-    def _fallback_response(self, classification: str) -> str:
-        """Fallback response templates"""
-        templates = {
-            'Support': "Thank you for reaching out. Our support team will assist you shortly.",
-            'Query': "Thank you for your query. We will review your question and provide a detailed response shortly. Please allow 1-2 business days for our response.",
-            'Request': "We have received your request and will process it as soon as possible. You will receive an update within 2-3 business days.",
-            'Help': "We understand you're experiencing an issue and we're here to help. Our technical team will investigate and respond with a solution within 24 hours.",
-            'Complaint': "We apologize for any inconvenience you've experienced. Your feedback is important to us and we will address your concerns promptly.",
-            'General': "Thank you for your email. We have received your message and will respond appropriately."
-        }
-        return templates.get(classification, templates['General'])
+            raise Exception(f"Failed to generate response: {str(e)}")
     
     def interpret_search_query(self, query: str) -> Dict[str, Any]:
         """Interpret natural language search query"""
         if not self.client:
-            logger.warning("AI client not initialized - using fallback query interpretation")
-            return self._fallback_query_interpretation(query)
+            logger.error("AI client not initialized - cannot interpret search query")
+            raise Exception("AI service not properly initialized. Cannot interpret search query.")
         
         try:
             prompt = f"""
             Interpret the following natural language search query for email search:
             
-            Query: "{query}"
+            Query: \"{query}\"
             
             Extract the following information and respond with JSON:
             1. filters: object with keys priority, sentiment, classification (values should be arrays)
@@ -218,14 +159,14 @@ class AIService:
             4. intent: brief description of what user is looking for
             
             Available values:
-            - priority: ["High Priority", "Medium Priority", "Low Priority"]
-            - sentiment: ["Positive", "Neutral", "Negative"]
-            - classification: ["Support", "Query", "Request", "Help", "Complaint", "General"]
+            - priority: [\"High Priority\", \"Medium Priority\", \"Low Priority\"]
+            - sentiment: [\"Positive\", \"Neutral\", \"Negative\"]
+            - classification: [\"Support\", \"Query\", \"Request\", \"Help\", \"Complaint\", \"General\"]
             
             Examples:
-            "negative emails" -> {{"filters": {{"sentiment": ["Negative"]}}, "search_terms": [], "sender_filters": [], "intent": "emails with negative sentiment"}}
-            "emails from alice" -> {{"filters": {{}}, "search_terms": [], "sender_filters": ["alice"], "intent": "emails from alice"}}
-            "high priority support tickets" -> {{"filters": {{"priority": ["High Priority"], "classification": ["Support"]}}, "search_terms": ["tickets"], "sender_filters": [], "intent": "high priority support emails"}}
+            \"negative emails\" -> {{\"filters\": {{\"sentiment\": [\"Negative\"]}}, \"search_terms\": [], \"sender_filters\": [], \"intent\": \"emails with negative sentiment\"}}
+            \"emails from alice\" -> {{\"filters\": {{}}, \"search_terms\": [], \"sender_filters\": [\"alice\"], \"intent\": \"emails from alice\"}}
+            \"high priority support tickets\" -> {{\"filters\": {{\"priority\": [\"High Priority\"], \"classification\": [\"Support\"]}}, \"search_terms\": [\"tickets\"], \"sender_filters\": [], \"intent\": \"high priority support emails\"}}
             
             Response (JSON only):
             """
@@ -252,64 +193,11 @@ class AIService:
                     result = json.loads(json_content)
                     return result
             
-            return self._fallback_query_interpretation(query)
+            raise Exception("Invalid response from AI service")
             
         except Exception as e:
             logger.error(f"Error interpreting search query: {e}")
-            return self._fallback_query_interpretation(query)
-    
-    def _fallback_query_interpretation(self, query: str) -> Dict[str, Any]:
-        """Fallback query interpretation"""
-        query_lower = query.lower()
-        
-        filters = {}
-        search_terms = []
-        sender_filters = []
-        
-        # Priority keywords
-        if any(word in query_lower for word in ['high priority', 'urgent', 'critical']):
-            filters['priority'] = ['High Priority']
-        elif any(word in query_lower for word in ['medium priority', 'normal']):
-            filters['priority'] = ['Medium Priority']
-        elif any(word in query_lower for word in ['low priority']):
-            filters['priority'] = ['Low Priority']
-        
-        # Sentiment keywords
-        if any(word in query_lower for word in ['negative', 'bad', 'angry', 'frustrated']):
-            filters['sentiment'] = ['Negative']
-        elif any(word in query_lower for word in ['positive', 'good', 'happy', 'satisfied']):
-            filters['sentiment'] = ['Positive']
-        elif any(word in query_lower for word in ['neutral']):
-            filters['sentiment'] = ['Neutral']
-        
-        # Classification keywords
-        if any(word in query_lower for word in ['support', 'help']):
-            filters['classification'] = ['Support']
-        elif any(word in query_lower for word in ['question', 'query']):
-            filters['classification'] = ['Query']
-        elif any(word in query_lower for word in ['request']):
-            filters['classification'] = ['Request']
-        elif any(word in query_lower for word in ['complaint']):
-            filters['classification'] = ['Complaint']
-        
-        # Sender filters
-        if 'from' in query_lower or 'by' in query_lower:
-            # Extract potential sender names
-            words = query.split()
-            for i, word in enumerate(words):
-                if word.lower() in ['from', 'by'] and i + 1 < len(words):
-                    sender_filters.append(words[i + 1])
-        
-        # Search terms (remaining words)
-        excluded_words = ['emails', 'email', 'list', 'all', 'with', 'from', 'by', 'high', 'medium', 'low', 'priority', 'positive', 'negative', 'neutral']
-        search_terms = [word for word in query.split() if word.lower() not in excluded_words and word not in sender_filters]
-        
-        return {
-            'filters': filters,
-            'search_terms': search_terms,
-            'sender_filters': sender_filters,
-            'intent': f"Search for: {query}"
-        }
+            raise Exception(f"Failed to interpret search query: {str(e)}")
 
 # Global AI service instance
 ai_service = AIService()

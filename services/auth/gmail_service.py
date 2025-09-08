@@ -11,6 +11,12 @@ from datetime import datetime
 from utils.database import insert_email, get_emails_collection
 from models import Email
 
+# Import AI service for email classification
+from services.ai_service import ai_service
+
+# Allow HTTP for local development
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 logger = logging.getLogger(__name__)
 
 class GmailService:
@@ -21,7 +27,9 @@ class GmailService:
         self.scopes = [
             'https://www.googleapis.com/auth/gmail.readonly',
             'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile'
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'openid',
+            'https://www.googleapis.com/auth/calendar'  # Added calendar scope
         ]
         self.credentials_file = 'gmail_credentials.json'
     
@@ -59,7 +67,8 @@ class GmailService:
         """Handle OAuth callback and store credentials"""
         try:
             flow = self.get_oauth_flow()
-            flow.fetch_token(authorization_response=authorization_response)
+            # Disable scope check to handle changing scopes
+            flow.fetch_token(authorization_response=authorization_response, disable_ssl_certificate_validation=True)
             
             credentials = flow.credentials
             user_info = self.get_user_info(credentials)
@@ -252,7 +261,7 @@ class GmailService:
             return ""
     
     def sync_emails_to_db(self, user_email: str = None, max_results: int = 100) -> Dict[str, Any]:
-        """Sync Gmail emails to database"""
+        """Sync Gmail emails to database with AI classification"""
         try:
             # Fetch emails from Gmail
             gmail_emails = self.fetch_emails(user_email, max_results)
@@ -266,12 +275,44 @@ class GmailService:
             
             synced_count = 0
             skipped_count = 0
+            failed_count = 0
             
             # Sync to database
             for email_data in gmail_emails:
                 try:
-                    # Create Email object
-                    email_obj = Email(email_data)
+                    # Apply AI classification
+                    try:
+                        classification_result = ai_service.classify_email(
+                            email_data['email_subject'], 
+                            email_data['email_body']
+                        )
+                        
+                        # Add classification results to email data
+                        email_data.update({
+                            'priority': classification_result['priority'],
+                            'sentiment': classification_result['sentiment'],
+                            'classification': classification_result['classification'],
+                            'summary': classification_result['summary']
+                        })
+                        
+                        # Generate suggested responses
+                        try:
+                            response = ai_service.generate_response(
+                                email_data['email_subject'],
+                                email_data['email_body'],
+                                classification_result['classification']
+                            )
+                            if response:
+                                email_data['suggested_responses'] = [response]
+                        except Exception as e:
+                            logger.warning(f"Could not generate response for email: {e}")
+                            email_data['suggested_responses'] = []
+                            
+                    except Exception as e:
+                        logger.error(f"AI classification failed for email: {e}")
+                        # Since we removed fallbacks, we'll skip this email
+                        failed_count += 1
+                        continue
                     
                     # Check if email already exists
                     collection = get_emails_collection()
@@ -280,6 +321,9 @@ class GmailService:
                     })
                     
                     if not existing:
+                        # Create Email object with classification
+                        email_obj = Email(email_data)
+                        
                         # Insert new email
                         insert_email(email_obj.to_dict())
                         synced_count += 1
@@ -288,13 +332,15 @@ class GmailService:
                         
                 except Exception as e:
                     logger.error(f"Error syncing email to DB: {e}")
+                    failed_count += 1
                     continue
             
             return {
                 'success': True,
-                'message': f'Synced {synced_count} new emails, skipped {skipped_count} existing',
+                'message': f'Synced {synced_count} new emails, skipped {skipped_count} existing, failed {failed_count}',
                 'synced_count': synced_count,
-                'skipped_count': skipped_count
+                'skipped_count': skipped_count,
+                'failed_count': failed_count
             }
             
         except Exception as e:

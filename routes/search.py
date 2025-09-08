@@ -44,7 +44,7 @@ def search_emails():
     
     except Exception as e:
         logger.error(f"Error in search: {e}")
-        flash('Error performing search. Please try again.', 'danger')
+        flash(f'Error performing search: {str(e)}', 'danger')
         return redirect(url_for('emails.email_list'))
 
 @search_bp.route('/api/suggestions')
