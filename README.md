@@ -1,223 +1,52 @@
-# EmailFlow - Intelligent Email Management System
+# EmailFlow
 
-## Streamline Your Email Workflow with AI-Powered Automation
+I built **EmailFlow** as part of the hiring process at **Linkenite**.  
+The goal was to make an email management system with AI features, while also showing my skills across backend, frontend, and integration.
 
-EmailFlow is a comprehensive email management solution that leverages the power of AI to help you organize, prioritize, and respond to emails efficiently. Whether you're handling customer support, managing team communications, or dealing with high volumes of emails daily, EmailFlow transforms your inbox into a productivity powerhouse.
-
-## Key Features ✨
-
-- **AI-Powered Email Classification**: Automatically categorizes emails by priority, sentiment, and content type
-- **Smart Response Suggestions**: Get AI-generated response templates tailored to email context
-- **Advanced Search**: Natural language search across your email history
-- **Email Insights**: Visualize your email patterns with intuitive dashboards
-- **Team Collaboration**: Share email threads and collaborate on responses
-- **Attachment Management**: Easily handle file uploads and downloads
-
-## Getting Started 🚀
-
-### Prerequisites
-
-- Python 3.11+
-- MongoDB account (free tier available)
-- NVIDIA API account (free tier available)
-
-### Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yourusername/EmailFlow.git
-   cd EmailFlow
-   ```
-
-2. **Set up a virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -e .
-   ```
-
-### Configuration 🔑
-
-EmailFlow requires two API keys to function properly. Here's how to get them:
-
-1. **NVIDIA API Key** (for AI features):
-   - Visit [NVIDIA API Portal](https://developer.nvidia.com/nvidia-api)
-   - Sign up for a free account
-   - Create a new API key in the dashboard
-   - Note: Free tier includes 5,000 requests per month
-
-2. **MongoDB Connection String** (for database):
-   - Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-   - Create a free cluster
-   - Create a database user and note the credentials
-   - Under "Connect" → "Connect Your Application", copy the connection string
-
-3. **Set up environment variables**:
-   Create a `.env` file in the project root with the following content:
-
-   ```env
-   # NVIDIA API Configuration
-   NVIDIA_API_KEY=your_nvidia_api_key_here
-   NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
-
-   # MongoDB Configuration
-   MONGO_URI=your_mongodb_connection_string_here
-
-   # Flask Configuration
-   SECRET_KEY=a_secure_secret_key_for_flask_sessions
-   SESSION_SECRET=another_secure_secret_for_sessions
-   ```
-
-### Running the Application ▶️
-
-1. **Start the development server**:
-   ```bash
-   python -m emailflow.main
-   ```
-
-2. **Access the application**:
-   Open your browser and navigate to `http://localhost:5000`
-
-### Deployment Options ☁️
-
-#### Option 1: Heroku (Recommended for Beginners)
-
-1. Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)
-2. Create a new Heroku app:
-   ```bash
-   heroku create your-app-name
-   ```
-3. Set environment variables in Heroku:
-   ```bash
-   heroku config:set NVIDIA_API_KEY=your_key_here
-   heroku config:set MONGO_URI=your_mongodb_uri_here
-   heroku config:set SECRET_KEY=your_secret_key
-   ```
-4. Deploy:
-   ```bash
-   git push heroku main
-   ```
-
-#### Option 2: Render
-
-1. Fork this repository to your GitHub account
-2. Log in to [Render](https://render.com)
-3. Click "New" → "Web Service"
-4. Connect your GitHub repository
-5. Set the following environment variables in Render dashboard:
-   - `NVIDIA_API_KEY`: Your NVIDIA API key
-   - `MONGO_URI`: Your MongoDB connection string
-   - `SECRET_KEY`: A secure secret key
-6. Deploy!
-
-## Project Structure 📁
-
-```
-EmailFlow/
-├── emailflow/              # Main application package
-│   ├── app.py             # Flask application setup
-│   ├── main.py            # Entry point
-│   ├── models.py          # Data models
-│   ├── routes/            # Route handlers
-│   ├── services/          # Business logic and external services
-│   └── utils/             # Utility functions
-├── templates/             # HTML templates
-├── static/                # CSS, JavaScript, images
-├── uploads/               # Uploaded files
-├── .env                   # Environment variables (not in version control)
-├── requirements.txt       # Python dependencies
-└── README.md              # This file
-```
-
-## API Integration Guide 🤝
-
-### NVIDIA API Setup
-
-1. Navigate to [NVIDIA Developer Portal](https://developer.nvidia.com/)
-2. Click "Join" to create an account
-3. After login, go to "Catalog" → "AI Foundation Models"
-4. Select "NVIDIA NIM Inference Microservice" for LLM inference
-5. Generate an API key from the dashboard
-6. Copy the API key and set it as `NVIDIA_API_KEY` in your environment
-
-### MongoDB Setup
-
-1. Visit [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Sign up for a free account
-3. Create a new project
-4. Build a free cluster (M0 Sandbox tier)
-5. Create a database user:
-   - Go to "Database Access" in left sidebar
-   - Click "Add New Database User"
-   - Choose "Password" authentication method
-   - Set username and password
-   - Assign "Read and Write to any database" permissions
-6. Configure network access:
-   - Go to "Network Access" in left sidebar
-   - Click "Add IP Address"
-   - For development: Add your current IP
-   - For production: Allow access from anywhere (0.0.0.0/0)
-7. Get connection string:
-   - Go to "Clusters" → "Connect"
-   - Choose "Connect your application"
-   - Copy the connection string
-   - Replace `<password>` with your database user password
-
-## Troubleshooting 🛠️
-
-### Common Issues
-
-1. **Module not found errors**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Environment variables not loading**:
-   - Ensure `.env` file is in the project root
-   - Check that variable names match exactly
-
-3. **Database connection failures**:
-   - Verify MongoDB URI format
-   - Check network access rules in MongoDB Atlas
-   - Confirm database user credentials
-
-4. **AI features not working**:
-   - Verify NVIDIA API key is correct
-   - Check that you haven't exceeded rate limits
-
-### Need Help?
-
-- Check the [Issues](https://github.com/yourusername/EmailFlow/issues) section
-- Submit a new issue if you encounter problems
-- Contact the maintainers for feature requests
-
-## Contributing 🤝
-
-We welcome contributions! Here's how you can help:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and development process.
-
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments 🙏
-
-- Thanks to NVIDIA for providing powerful AI APIs
-- MongoDB for the excellent database platform
-- The open-source community for various libraries and tools
-- All contributors who have helped shape EmailFlow
+![Dashboard Screenshot](Screenshot%202025-09-09%20020146.jpg)
 
 ---
 
-*Made with ❤️ by developers, for developers*
+## Features
+
+- Manage emails in one place  
+- AI classification and search using NVIDIA Build API models  
+- Dashboard with patterns and quick stats  
+- Fast search with simple UI  
+- Fully built solo (frontend + backend + AI + styling)
+
+---
+
+## Tech Stack
+
+| Area       | Tech Used                        |
+|------------|----------------------------------|
+| Backend    | Python (Flask)                   |
+| Database   | MongoDB                          |
+| AI Models  | NVIDIA Build API (Qwen, Gemma, DeepSeek) |
+| Frontend   | HTML, CSS, Jinja templates       |
+| Other      | JavaScript for interactivity     |
+
+---
+
+## Setup Instructions
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/Akashbellary/MailManager-application.git
+   cd MailManager-application
+
+2. Create virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate   # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+
+
+3. Create a .env file in the project root:
+   ```bash
+   NVIDIA_API_KEY=your_nvidia_key
+   MONGODB_URI=your_mongodb_connection_string
+
+
+Run the app: python -m emailflow.main
