@@ -3,7 +3,7 @@ services:
     name: emailflow
     env: python
     buildCommand: "pip install -e ."
-    startCommand: "gunicorn emailflow.app:app"
+    startCommand: "gunicorn app:app"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
