@@ -23,14 +23,20 @@ logging.getLogger('matplotlib').setLevel(logging.WARNING)
 logging.getLogger('h5py').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
-# Create Flask app
-app = Flask(__name__)
+# Get the directory of the current file
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Create Flask app with explicit template and static folder paths
+app = Flask(__name__,
+            template_folder=os.path.join(basedir, '..', 'templates'),
+            static_folder=os.path.join(basedir, '..', 'static'))
+
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, '..', 'uploads')
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -74,3 +80,5 @@ def too_large(error):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+
