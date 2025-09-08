@@ -36,11 +36,11 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Register blueprints
-from routes.dashboard import dashboard_bp
-from routes.emails import emails_bp
-from routes.approval import approval_bp
-from routes.search import search_bp
-from routes.auth import auth_bp
+from emailflow.routes.dashboard import dashboard_bp
+from emailflow.routes.emails import emails_bp
+from emailflow.routes.approval import approval_bp
+from emailflow.routes.search import search_bp
+from emailflow.routes.auth import auth_bp
 
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(emails_bp, url_prefix='/emails')

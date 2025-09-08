@@ -1,9 +1,9 @@
 import logging
 import numpy as np
 from typing import Dict, List, Optional, Any
-from utils.database import find_emails, count_emails, get_emails_collection
-from services.ai_service import ai_service
-from utils.helpers import build_mongo_filter
+from emailflow.utils.database import find_emails, count_emails, get_emails_collection
+from emailflow.services.ai_service import ai_service
+from emailflow.utils.helpers import build_mongo_filter
 
 logger = logging.getLogger(__name__)
 

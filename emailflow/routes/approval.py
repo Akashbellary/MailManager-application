@@ -1,9 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 import logging
 from datetime import datetime
-from utils.database import (find_responses, count_emails, find_response_by_id, 
+from emailflow.utils.database import (find_responses, count_emails, find_response_by_id, 
                            update_response, find_email_by_id)
-from utils.helpers import create_pagination_info
+from emailflow.utils.helpers import create_pagination_info
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def approval_queue():
             mongo_filter['status'] = status_filter
         
         # Get total count
-        from utils.database import get_responses_collection
+        from emailflow.utils.database import get_responses_collection
         total = get_responses_collection().count_documents(mongo_filter)
         
         # Get paginated responses
@@ -225,7 +225,7 @@ def edit_response(response_id):
 def api_approval_stats():
     """API endpoint for approval statistics"""
     try:
-        from utils.database import get_responses_collection
+        from emailflow.utils.database import get_responses_collection
         
         # Get status counts
         status_counts = {}

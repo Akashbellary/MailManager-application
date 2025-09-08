@@ -8,11 +8,11 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import json
 from datetime import datetime
-from utils.database import insert_email, get_emails_collection
-from models import Email
+from emailflow.utils.database import insert_email, get_emails_collection
+from emailflow.models import Email
 
 # Import AI service for email classification
-from services.ai_service import ai_service
+from emailflow.services.ai_service import ai_service
 
 # Allow HTTP for local development
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'

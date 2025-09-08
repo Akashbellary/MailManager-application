@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 import logging
-from services.search_service import search_service
-from utils.helpers import parse_filter_params, create_pagination_info
+from emailflow.services.search_service import search_service
+from emailflow.utils.helpers import parse_filter_params, create_pagination_info
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ def api_interpret_query():
         if not query:
             return jsonify({'success': False, 'error': 'Query is required'})
         
-        from services.ai_service import ai_service
+        from emailflow.services.ai_service import ai_service
         interpretation = ai_service.interpret_search_query(query)
         
         return jsonify({

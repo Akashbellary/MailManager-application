@@ -4,12 +4,12 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.utils import secure_filename
 import logging
 from datetime import datetime
-from utils.database import (find_emails, count_emails, find_email_by_id, 
+from emailflow.utils.database import (find_emails, count_emails, find_email_by_id, 
                            insert_response, find_responses_by_email_id, find_progress_by_id)
-from utils.helpers import parse_filter_params, build_mongo_filter, create_pagination_info, sanitize_filename
-from services.email_processor import email_processor
-from services.ai_service import ai_service
-from models import Response
+from emailflow.utils.helpers import parse_filter_params, build_mongo_filter, create_pagination_info, sanitize_filename
+from emailflow.services.email_processor import email_processor
+from emailflow.services.ai_service import ai_service
+from emailflow.models import Response
 import json
 
 logger = logging.getLogger(__name__)

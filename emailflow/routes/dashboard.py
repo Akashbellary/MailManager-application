@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 import logging
-from utils.database import find_emails, count_emails, find_responses, get_emails_collection
-from utils.helpers import calculate_stats, safe_json_encode
+from emailflow.utils.database import find_emails, count_emails, find_responses, get_emails_collection
+from emailflow.utils.helpers import calculate_stats, safe_json_encode
 
 logger = logging.getLogger(__name__)
 

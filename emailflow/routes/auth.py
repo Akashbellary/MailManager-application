@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 import logging
-from services.auth.gmail_service import gmail_service
+from emailflow.services.auth.gmail_service import gmail_service
 
 logger = logging.getLogger(__name__)
 

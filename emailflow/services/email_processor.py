@@ -4,10 +4,10 @@
 # from datetime import datetime
 # from typing import Dict, List, Optional, Generator, Any
 # from io import StringIO
-# from utils.database import insert_email, update_progress, insert_progress
-# from utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
-# from services.ai_service import ai_service
-# from models import Email, UploadProgress
+# from emailflow.utils.database import insert_email, update_progress, insert_progress
+# from emailflow.utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
+# from emailflow.services.ai_service import ai_service
+# from emailflow.models import Email, UploadProgress
 
 # logger = logging.getLogger(__name__)
 
@@ -270,10 +270,10 @@
 # from datetime import datetime
 # from typing import Dict, List, Optional, Generator, Any
 # from io import StringIO
-# from utils.database import insert_email, update_progress, insert_progress
-# from utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
-# from services.ai_service import ai_service
-# from models import Email, UploadProgress
+# from emailflow.utils.database import insert_email, update_progress, insert_progress
+# from emailflow.utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
+# from emailflow.services.ai_service import ai_service
+# from emailflow.models import Email, UploadProgress
 
 # logger = logging.getLogger(__name__)
 
@@ -504,10 +504,10 @@
 # from datetime import datetime
 # from typing import Dict, List, Optional, Generator, Any
 # from io import StringIO
-# from utils.database import insert_email, update_progress, insert_progress
-# from utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
-# from services.ai_service import ai_service
-# from models import Email, UploadProgress
+# from emailflow.utils.database import insert_email, update_progress, insert_progress
+# from emailflow.utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
+# from emailflow.services.ai_service import ai_service
+# from emailflow.models import Email, UploadProgress
 
 # logger = logging.getLogger(__name__)
 
@@ -738,10 +738,10 @@
 # from datetime import datetime
 # from typing import Dict, List, Optional, Generator, Any
 # from io import StringIO
-# from utils.database import insert_email, update_progress, insert_progress
-# from utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
-# from services.ai_service import ai_service
-# from models import Email, UploadProgress
+# from emailflow.utils.database import insert_email, update_progress, insert_progress
+# from emailflow.utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
+# from emailflow.services.ai_service import ai_service
+# from emailflow.models import Email, UploadProgress
 
 # logger = logging.getLogger(__name__)
 
@@ -983,10 +983,10 @@
 # from bson import ObjectId
 # import re
 
-# from utils.database import insert_email, update_progress, insert_progress
-# from utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
-# from services.ai_service import ai_service
-# from models import Email, UploadProgress
+# from emailflow.utils.database import insert_email, update_progress, insert_progress
+# from emailflow.utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
+# from emailflow.services.ai_service import ai_service
+# from emailflow.models import Email, UploadProgress
 
 # logger = logging.getLogger(__name__)
 
@@ -1216,10 +1216,10 @@ from typing import Dict, Any
 from bson import ObjectId
 import re
 
-from utils.database import insert_email, update_progress, insert_progress
-from utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
-from services.ai_service import ai_service
-from models import Email, UploadProgress
+from emailflow.utils.database import insert_email, update_progress, insert_progress
+from emailflow.utils.helpers import clean_text, extract_email_addresses, extract_phone_numbers, parse_date, validate_csv_headers
+from emailflow.services.ai_service import ai_service
+from emailflow.models import Email, UploadProgress
 
 logger = logging.getLogger(__name__)
 
